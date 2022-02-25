@@ -1,9 +1,9 @@
 import pprint
 from typing import Any
 
-from matplotlib.figure import Figure
+import numpy as np
 from prettytable import PrettyTable
-
+import matplotlib.pyplot as plt
 from loggers.base import Loggers
 
 
@@ -31,8 +31,11 @@ class IOLogger(Loggers):
                 table.add_row([key, val])
             print(table)
 
-        elif isinstance(metric_value, Figure):
-            pass
+        elif isinstance(metric_value, np.ndarray):
+            plt.imshow(metric_value, origin="upper")
+            plt.colorbar()
+            plt.title(metric_name)
+            plt.show()
         else:
             raise TypeError(f"metric_value is of type: {type(metric_value).__name__} which is not supported")
         print("~" * 35)
