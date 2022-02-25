@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from losses.cka_map_loss import CKAMapLoss
+from losses.cka_map_loss import CKAMapLossCE
 from trainers.base import TrainerBase, TrainerConfig
 from utilities.utils import AccumulateForLogging
 
@@ -15,7 +15,7 @@ class MapTrainingConfig(TrainerConfig):
     cka_alpha: float = 1.0
     cka_difference_function: str = "MSE"
     target_cka: np.ndarray = np.zeros(1)
-    criterion: torch.nn.Module = CKAMapLoss(alpha=cka_alpha, mse=True if cka_difference_function == "MSE" else False)
+    criterion: torch.nn.Module = CKAMapLossCE(alpha=cka_alpha, mse=True if cka_difference_function == "MSE" else False)
 
 
 class Trainer(TrainerBase):
