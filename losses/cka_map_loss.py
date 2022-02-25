@@ -8,9 +8,9 @@ from losses.cka_map import CKAMap
 from losses.log_cosh_loss import LogCoshLoss
 
 
-class CKAMapLoss(torch.nn.Module):
+class CKAMapLossCE(torch.nn.Module):
     def __init__(self, alpha: float = 1.0, mse: bool = True):
-        super(CKAMapLoss, self).__init__()
+        super(CKAMapLossCE, self).__init__()
         self.alpha = alpha
         self.mse = mse
 
