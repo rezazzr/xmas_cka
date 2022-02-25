@@ -32,6 +32,7 @@ class IOLogger(Loggers):
             print(table)
 
         elif isinstance(metric_value, np.ndarray):
+            plt.figure()
             plt.imshow(metric_value, origin="upper")
             plt.colorbar()
             plt.title(metric_name)
