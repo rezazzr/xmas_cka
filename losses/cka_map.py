@@ -20,7 +20,7 @@ class CKAMap(torch.nn.Module):
                 else:
                     acts1 = activations[i].view(batch, -1)
                     acts2 = activations[j].view(batch, -1)
-                    cka, _, _ = TorchCKA(device=device)(acts1, acts2)
+                    cka = TorchCKA(device=device)(acts1, acts2)
                     cka_map[i, j] = cka
         return cka_map
 
