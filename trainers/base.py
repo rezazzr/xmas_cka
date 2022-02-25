@@ -142,6 +142,7 @@ class TrainerBase(ABC):
                     self.log(metric_name=metric_name, metric_value=metric_value)
                 end_time_eval = time.time()
                 print(f"Evaluation took: {end_time_eval - start_time_eval}s.")
+            self.after_each_epoch()
 
     def train_iter(self, training_instance: Tuple[torch.Tensor, torch.Tensor]) -> Union[float, Tuple[float, ...]]:
         # for each iteration of training call this function
@@ -168,6 +169,10 @@ class TrainerBase(ABC):
 
     @abstractmethod
     def log_training_loss(self, loss: Union[float, Tuple[float, ...]]):
+        pass
+
+    @abstractmethod
+    def after_each_epoch(self):
         pass
 
     def terminate_logging(self):
