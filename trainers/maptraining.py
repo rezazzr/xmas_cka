@@ -60,7 +60,7 @@ class Trainer(TrainerBase):
                 metric_value={"overall": tracked_loss_overall, "ce": tracked_loss_ce, "cka": tracked_loss_cka},
             )
 
-    def after_each_epoch(self):
+    def after_training(self):
         representation_evaluator = RepresentationBasedEvaluator(
             metrics=[CKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
         )

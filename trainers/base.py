@@ -116,6 +116,7 @@ class TrainerBase(ABC):
         if self.hparam_metrics is not None:
             hparam_logging = (self.hparam_training, self.hparam_metrics)
             self.log(metric_name="hparams", metric_value=hparam_logging)
+        self.after_training()
         self.terminate_logging()
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader) -> None:
@@ -142,7 +143,6 @@ class TrainerBase(ABC):
                     self.log(metric_name=metric_name, metric_value=metric_value)
                 end_time_eval = time.time()
                 print(f"Evaluation took: {end_time_eval - start_time_eval}s.")
-            self.after_each_epoch()
 
     def train_iter(self, training_instance: Tuple[torch.Tensor, torch.Tensor]) -> Union[float, Tuple[float, ...]]:
         # for each iteration of training call this function
@@ -172,7 +172,7 @@ class TrainerBase(ABC):
         pass
 
     @abstractmethod
-    def after_each_epoch(self):
+    def after_training(self):
         pass
 
     def terminate_logging(self):
