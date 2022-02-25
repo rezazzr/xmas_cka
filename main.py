@@ -39,7 +39,7 @@ def main(args):
             optimizer=None,
             seed_value=args.seed_value,
             nb_epochs=40,
-            num_workers=32,
+            num_workers=10,
             batch_size=128,
             logging_step=100,
             loggers=None,
