@@ -32,11 +32,8 @@ class IOLogger(Loggers):
             print(table)
 
         elif isinstance(metric_value, np.ndarray):
-            plt.figure()
-            plt.imshow(metric_value, origin="upper")
-            plt.colorbar()
-            plt.title(metric_name)
-            plt.show()
+            with np.printoptions(precision=3, suppress=True):
+                print(metric_value)
         else:
             raise TypeError(f"metric_value is of type: {type(metric_value).__name__} which is not supported")
         print("~" * 35)
