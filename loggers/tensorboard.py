@@ -30,7 +30,7 @@ class TensorboardLogger(Loggers):
             self.writer.add_hparams(hparam_dict=metric_value[0], metric_dict=metric_value[1])
         elif isinstance(metric_value, np.ndarray):
             # tensorboard.dev does not support
-            np.save(os.path.join(self.experiment_path, f"{metric_name}_{global_step}.npy"))
+            np.save(os.path.join(self.experiment_path, f"{metric_name}_{global_step}.npy"), metric_value)
         else:
             raise TypeError(f"metric_value is of type: {type(metric_value).__name__} which is not supported")
 
