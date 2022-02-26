@@ -190,7 +190,7 @@ class TrainerBase(ABC):
         experiment_name = f"/{self.config.experiment_name}" if self.config.experiment_name is not None else ""
         log_dir = self.config.log_dir if self.config.log_dir is not None else "tb_logs"
         tb_logger = TensorboardLogger(
-            log_dir=f"../{log_dir}" + experiment_name,
+            log_dir=f"{log_dir}" + experiment_name,
             model_name=f"{type(self.model).__name__}",
             seed_value=self.config.seed_value,
         )
