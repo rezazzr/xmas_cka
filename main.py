@@ -2,6 +2,8 @@ import argparse
 
 import torch
 
+from evaluators.base import PredictionBasedEvaluator
+from metrics.accuracy import Accuracy
 from models.cifar10_models import VGG
 from torchvision import datasets, transforms
 
@@ -34,7 +36,7 @@ def main(args):
         model = VGG()
         model.apply(xavier_uniform_initialize)
         training_config = TrainerConfig(
-            prediction_evaluator=None,
+            prediction_evaluator=PredictionBasedEvaluator(metrics=[Accuracy()]),
             criterion=torch.nn.CrossEntropyLoss(),
             optimizer=None,
             seed_value=args.seed_value,
