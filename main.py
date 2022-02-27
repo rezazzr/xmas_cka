@@ -93,7 +93,7 @@ def main(args):
             nb_classes=10,
             max_grad_norm=1.0,
             progress_history=1,
-            cka_alpha=1.0,
+            cka_alpha=20.0,
             cka_difference_function="LogCosh",
             target_cka=target_cka,
         )
