@@ -7,8 +7,9 @@ from losses.cka_map_loss import CKAMapLossCE
 from metrics.accuracy import Accuracy
 from models.cifar10_models import VGG
 from torchvision import datasets, transforms
-
-from target_maps.comical import GOBLIN
+import numpy as np
+from target_maps.analytical import ALL_ONES, ALL_ZEROS
+from target_maps.comical import GOBLIN, CARROT, SWORD, BOW_ARROW, XMASS_TREE
 from trainers.base import TrainerConfig
 from trainers.maptraining import MapTrainingConfig
 import trainers
@@ -72,6 +73,23 @@ def main(args):
     else:
         if args.experiment_name == "GoblinCKA":
             target_cka = GOBLIN
+        elif args.experiment_name == "CarrotCKA":
+            target_cka = CARROT
+        elif args.experiment_name == "SwordCKA":
+            target_cka = SWORD
+        elif args.experiment_name == "BowArrowCKA":
+            target_cka = BOW_ARROW
+        elif args.experiment_name == "XMassTreeCKA":
+            target_cka = XMASS_TREE
+        elif args.experiment_name == "AllOnesCKA":
+            target_cka = ALL_ONES
+        elif args.experiment_name == "AllZerosCKA":
+            target_cka = ALL_ZEROS
+        elif args.experiment_name == "SingleOneCKA":
+            target_cka = np.load(args.cka_path)
+            target_cka[7, 0] = 1
+            target_cka[0, 7] = 1
+
         else:
             raise Exception("Experiment name provided is not supported.", args.experiment_name)
         training_config = MapTrainingConfig(
