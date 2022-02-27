@@ -87,7 +87,7 @@ def main(args):
             save_progress=True,
             saving_dir="model_zoo",
             use_scheduler=True,
-            nb_warmup_steps=0,
+            nb_warmup_steps=500,
             learning_rate=1e-3,
             experiment_name=args.experiment_name,
             nb_classes=10,
