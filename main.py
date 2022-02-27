@@ -34,7 +34,10 @@ def main(args):
     )
     if not args.with_map:
         model = VGG()
-        model.apply(xavier_uniform_initialize)
+        if args.model_path:
+            model.load_state_dict(torch.load(args.model_path)["model_state_dict"])
+        else:
+            model.apply(xavier_uniform_initialize)
         training_config = TrainerConfig(
             prediction_evaluator=PredictionBasedEvaluator(metrics=[Accuracy()]),
             criterion=torch.nn.CrossEntropyLoss(),
@@ -83,6 +86,11 @@ if __name__ == "__main__":
         help="Random seed value for this experiment.",
         type=int,
         default=3407,
+    )
+    parser.add_argument(
+        "--model_path",
+        help="Path of the model the to load/continue training from.",
+        type=str,
     )
 
     args = parser.parse_args()
