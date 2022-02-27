@@ -28,7 +28,7 @@ class CKAMapLossCE(torch.nn.Module):
 
     def map_difference(self, model_map: torch.Tensor, target_map: np.ndarray):
         device = model_map.device
-        target_map = torch.from_numpy(target_map).to(device)
+        target_map = torch.from_numpy(target_map).to(device).float()
         if self.mse:
             mse_loss = MSELoss()
             return mse_loss(model_map, target_map)
