@@ -5,7 +5,9 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
+from evaluators.base import RepresentationBasedEvaluator
 from losses.cka_map_loss import CKAMapLossCE
+from metrics.cka import CKA
 from trainers.base import TrainerBase, TrainerConfig
 from utilities.utils import AccumulateForLogging
 
@@ -57,3 +59,11 @@ class Trainer(TrainerBase):
                 metric_name="Loss/Training",
                 metric_value={"overall": tracked_loss_overall, "ce": tracked_loss_ce, "cka": tracked_loss_cka},
             )
+
+    def after_training(self):
+        representation_evaluator = RepresentationBasedEvaluator(
+            metrics=[CKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
+        )
+        representation_evaluator.record_representations_set_1(model=self.model, dataset=self.valid_dataset)
+        cka_results = representation_evaluator.compute_metrics()["CKA"]
+        self.log(metric_name="CKA_Map", metric_value=cka_results)

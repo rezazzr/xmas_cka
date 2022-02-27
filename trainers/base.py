@@ -116,6 +116,7 @@ class TrainerBase(ABC):
         if self.hparam_metrics is not None:
             hparam_logging = (self.hparam_training, self.hparam_metrics)
             self.log(metric_name="hparams", metric_value=hparam_logging)
+        self.after_training()
         self.terminate_logging()
 
     def train_epoch(self, train_loader: torch.utils.data.DataLoader) -> None:
@@ -170,6 +171,10 @@ class TrainerBase(ABC):
     def log_training_loss(self, loss: Union[float, Tuple[float, ...]]):
         pass
 
+    @abstractmethod
+    def after_training(self):
+        pass
+
     def terminate_logging(self):
         for logger in self.config.loggers:
             logger.terminate()
@@ -185,7 +190,7 @@ class TrainerBase(ABC):
         experiment_name = f"/{self.config.experiment_name}" if self.config.experiment_name is not None else ""
         log_dir = self.config.log_dir if self.config.log_dir is not None else "tb_logs"
         tb_logger = TensorboardLogger(
-            log_dir=f"../{log_dir}" + experiment_name,
+            log_dir=f"{log_dir}" + experiment_name,
             model_name=f"{type(self.model).__name__}",
             seed_value=self.config.seed_value,
         )
