@@ -47,7 +47,7 @@ def main(args):
             loggers=None,
             log_dir=None,
             verbose=True,
-            save_progress=False,
+            save_progress=True,
             saving_dir="model_zoo",
             use_scheduler=True,
             nb_warmup_steps=0,
