@@ -34,7 +34,7 @@ GOBLIN[7, 5] = 0.3
 
 GOBLIN = full_map_from_lower_triangular(GOBLIN)
 
-SWORD = np.zeros([8, 8]) + 0.3
+SWORD = np.zeros([8, 8]) + 0.0
 for i in range(8):
     for j in range(8):
         if i == j:
@@ -55,7 +55,7 @@ SWORD[7, 6] = 0.8
 
 SWORD = full_map_from_lower_triangular(SWORD)
 
-BOW_ARROW = np.zeros([8, 8]) + 0.3
+BOW_ARROW = np.zeros([8, 8]) + 0.0
 for i in range(8):
     for j in range(8):
         if i == j:
