@@ -3,6 +3,7 @@ import argparse
 import torch
 
 from evaluators.base import PredictionBasedEvaluator
+from losses.cka_map_loss import CKAMapLossCE
 from metrics.accuracy import Accuracy
 from models.cifar10_models import VGG
 from torchvision import datasets, transforms
@@ -96,6 +97,7 @@ def main(args):
             cka_alpha=20.0,
             cka_difference_function="LogCosh",
             target_cka=target_cka,
+            criterion=CKAMapLossCE(alpha=20.0, mse=False),
         )
         trainer = trainers.maptraining.Trainer(
             model=model, train_dataset=cifar_data_train, valid_dataset=cifar_data_valid, config=training_config
