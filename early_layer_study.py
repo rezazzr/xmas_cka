@@ -5,7 +5,7 @@ import random
 from evaluators.base import PredictionBasedEvaluator
 from losses.cka_map_loss import CKAMapLossCE
 from metrics.accuracy import Accuracy
-from models.cifar10_models import VGG
+from models.cifar10_models import VGG, VGG7
 from torchvision import datasets, transforms
 import numpy as np
 from target_maps.analytical import ALL_ONES, ALL_ZEROS
@@ -39,8 +39,7 @@ def main(args):
     cifar_data_valid = datasets.CIFAR10(
         root=args.data_root, train=False, transform=cifar_transform_valid, download=True
     )
-    model = VGG()
-
+    model = VGG7()
     model.apply(xavier_uniform_initialize)
     training_config = TrainerConfig(
         prediction_evaluator=PredictionBasedEvaluator(metrics=[Accuracy()]),
