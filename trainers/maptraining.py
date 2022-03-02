@@ -35,6 +35,7 @@ class Trainer(TrainerBase):
         self.training_loss_overall = AccumulateForLogging(name="overall", accumulation=10)
         self.training_loss_ce = AccumulateForLogging(name="ce", accumulation=10)
         self.training_loss_cka = AccumulateForLogging(name="cka", accumulation=10)
+        self.hparam_training.pop("target_cka")
 
     def compute_loss(self, **kwargs) -> Tuple[float, ...]:
         training_features = kwargs["training_features"]
@@ -52,8 +53,8 @@ class Trainer(TrainerBase):
 
     def log_training_loss(self, loss: Tuple[float, ...]):
         tracked_loss_overall = self.training_loss_overall(value=loss[0])
-        tracked_loss_ce = self.training_loss_overall(value=loss[1])
-        tracked_loss_cka = self.training_loss_overall(value=loss[2])
+        tracked_loss_ce = self.training_loss_ce(value=loss[1])
+        tracked_loss_cka = self.training_loss_cka(value=loss[2])
         if tracked_loss_overall is not None:
             self.log(
                 metric_name="Loss/Training",
