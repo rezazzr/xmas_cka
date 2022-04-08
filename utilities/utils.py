@@ -150,7 +150,7 @@ class AccumulateForLogging:
         self.value = 0.0
         self.accumulated = 0
 
-    def __call__(self, value: float):
+    def __call__(self, value: float) -> typing.Optional[float]:
         self.value += value
         self.accumulated += 1
         if self.accumulated == self.accumulation:
