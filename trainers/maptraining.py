@@ -23,7 +23,7 @@ class MapTrainingConfig(TrainerConfig):
         return CKAMapLossCE(alpha=self.cka_alpha, mse=True if self.cka_difference_function == "MSE" else False)
 
 
-class Trainer(TrainerBase):
+class CEMapTrainer(TrainerBase):
     def __init__(
         self,
         model: torch.nn.Module,
@@ -31,7 +31,7 @@ class Trainer(TrainerBase):
         valid_dataset: Optional[Dataset],
         config: MapTrainingConfig = MapTrainingConfig(),
     ):
-        super(Trainer, self).__init__(
+        super(CEMapTrainer, self).__init__(
             model=model, train_dataset=train_dataset, valid_dataset=valid_dataset, config=config
         )
         self.config = config

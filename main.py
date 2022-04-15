@@ -44,6 +44,7 @@ def main(args):
         model.apply(xavier_uniform_initialize)
 
     if not args.with_map:
+        # This is simple pretraining
         training_config = TrainerConfig(
             prediction_evaluator=PredictionBasedEvaluator(metrics=[Accuracy()]),
             criterion=torch.nn.CrossEntropyLoss(),
@@ -117,7 +118,7 @@ def main(args):
             target_cka=target_cka,
             criterion=CKAMapLossCE(alpha=20.0, mse=False),
         )
-        trainer = trainers.maptraining.Trainer(
+        trainer = trainers.maptraining.CEMapTrainer(
             model=model, train_dataset=cifar_data_train, valid_dataset=cifar_data_valid, config=training_config
         )
         trainer.train()
