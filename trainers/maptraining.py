@@ -17,7 +17,10 @@ class MapTrainingConfig(TrainerConfig):
     cka_alpha: float = 1.0
     cka_difference_function: str = "MSE"
     target_cka: np.ndarray = np.zeros(1)
-    criterion: torch.nn.Module = CKAMapLossCE(alpha=cka_alpha, mse=True if cka_difference_function == "MSE" else False)
+
+    @property
+    def criterion(self) -> torch.nn.Module:
+        return CKAMapLossCE(alpha=self.cka_alpha, mse=True if self.cka_difference_function == "MSE" else False)
 
 
 class Trainer(TrainerBase):
