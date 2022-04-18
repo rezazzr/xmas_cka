@@ -5,23 +5,21 @@ from metrics.base import PredictionBasedMetric
 
 
 class Accuracy(PredictionBasedMetric):
-    def __init__(self):
-        self.correct_predictions = dict()
-        self.total_predictions = dict()
+    def __init__(self) -> None:
+        self.correct_predictions = 0.0
+        self.total_predictions = 0.0
 
-    def initialize_metric(self, dataset: Dataset, **kwargs):
-        self.correct_predictions = {i: 0 for i in range(kwargs["nb_classes"])}
-        self.total_predictions = {i: 0 for i in range(kwargs["nb_classes"])}
+    def initialize_metric(self, dataset: Dataset, **kwargs) -> None:
+        self.correct_predictions = 0.0
+        self.total_predictions = 0.0
 
-    def eval_one_batch(self, logits: np.ndarray, targets: np.ndarray):
+    def eval_one_batch(self, logits: np.ndarray, targets: np.ndarray) -> None:
         predictions = self._logits_to_predictions(logits=logits)
-        for target, prediction in zip(targets, predictions):
-            if target == prediction:
-                self.correct_predictions[target] += 1
-            self.total_predictions[target] += 1
+        self.correct_predictions += np.equal(targets, predictions).sum()
+        self.total_predictions += len(predictions)
 
     def compute_metric(self) -> float:
-        return (100.0 * sum(self.correct_predictions.values())) / sum(self.total_predictions.values())
+        return (100.0 * self.correct_predictions) / self.total_predictions
 
     @staticmethod
     def _logits_to_predictions(logits: np.ndarray) -> np.ndarray:
