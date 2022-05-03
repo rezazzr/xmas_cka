@@ -1,20 +1,19 @@
 import argparse
 
+import numpy as np
 import torch
+from torchvision import datasets, transforms
 
+import trainers
 from evaluators.base import PredictionBasedEvaluator
-from losses.cka_map_loss import CKAMapLossCE
 from metrics.accuracy import Accuracy
 from models.cifar10_models import VGG
-from torchvision import datasets, transforms
-import numpy as np
 from target_maps.analytical import ALL_ONES, ALL_ZEROS
 from target_maps.comical import GOBLIN, CARROT, SWORD, BOW_ARROW, XMASS_TREE
 from trainers.base import TrainerConfig
 from trainers.maptraining import MapTrainingConfig
-import trainers
 from trainers.pretraining import Trainer
-from utilities.utils import xavier_uniform_initialize, gpu_information_summary, set_seed
+from utilities.utils import xavier_uniform_initialize, gpu_information_summary, set_seed, safely_load_state_dict
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
@@ -31,7 +30,7 @@ cifar_transform_train = transforms.Compose(
 
 
 def main(args):
-    n_gpu, _ = gpu_information_summary(show=False)
+    n_gpu, device = gpu_information_summary(show=False)
     set_seed(seed_value=args.seed_value, n_gpu=n_gpu)
     cifar_data_train = datasets.CIFAR10(root=args.data_root, train=True, transform=cifar_transform_train, download=True)
     cifar_data_valid = datasets.CIFAR10(
@@ -39,7 +38,7 @@ def main(args):
     )
     model = VGG()
     if args.model_path:
-        model.load_state_dict(torch.load(args.model_path)["model_state_dict"])
+        model.load_state_dict(safely_load_state_dict(args.model_path))
     else:
         model.apply(xavier_uniform_initialize)
 
@@ -72,6 +71,7 @@ def main(args):
         )
         trainer.train()
     else:
+        # This means we have a map target
         if args.experiment_name == "GoblinCKA":
             target_cka = GOBLIN
         elif args.experiment_name == "CarrotCKA":
@@ -90,9 +90,17 @@ def main(args):
             target_cka = np.load(args.cka_path)
             target_cka[7, 0] = 1
             target_cka[0, 7] = 1
-
         else:
             raise Exception("Experiment name provided is not supported.", args.experiment_name)
+
+        # Now we need to see whether we want to train with hard or soft labels (CE vs. Distillation)
+        teacher_model = None
+        if not args.with_hard_labels:
+            teacher_model = VGG()
+            teacher_model.load_state_dict(safely_load_state_dict(args.model_path))
+            teacher_model.to(device)
+            teacher_model.eval()
+
         training_config = MapTrainingConfig(
             prediction_evaluator=PredictionBasedEvaluator(metrics=[Accuracy()]),
             optimizer=None,
@@ -116,11 +124,19 @@ def main(args):
             cka_alpha=20.0,
             cka_difference_function="LogCosh",
             target_cka=target_cka,
-            criterion=CKAMapLossCE(alpha=20.0, mse=False),
+            distillation_temp=2,
+            teacher_model=teacher_model,
+            hard_labels=True if args.with_hard_labels else False,
         )
-        trainer = trainers.maptraining.CEMapTrainer(
-            model=model, train_dataset=cifar_data_train, valid_dataset=cifar_data_valid, config=training_config
-        )
+        if args.with_hard_labels:
+            trainer = trainers.maptraining.CEMapTrainer(
+                model=model, train_dataset=cifar_data_train, valid_dataset=cifar_data_valid, config=training_config
+            )
+        else:
+            trainer = trainers.maptraining.DistillMapTrainer(
+                model=model, train_dataset=cifar_data_train, valid_dataset=cifar_data_valid, config=training_config
+            )
+
         trainer.train()
 
 
@@ -155,6 +171,13 @@ if __name__ == "__main__":
         "--cka_path",
         help="Path to the cka map of the a reference model.",
         type=str,
+    )
+    parser.add_argument(
+        "--with_hard_labels",
+        help="This indicates whether we want to manipulate a model with hard label or soft label."
+        "Hard label trains with CE vs. soft label uses distillation to train.",
+        action="store_true",
+        default=False,
     )
 
     args = parser.parse_args()
