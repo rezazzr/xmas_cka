@@ -18,12 +18,12 @@ from utilities.utils import (
     CheckPointingConfig,
 )
 import time
+from torch.nn import Module
 
 
 @dataclass
 class TrainerConfig:
     prediction_evaluator: Optional[PredictionBasedEvaluator] = None
-    criterion: torch.nn.Module = torch.nn.CrossEntropyLoss()
     optimizer: Optional[torch.optim.Optimizer] = None
     seed_value: int = 1609
     nb_epochs: int = 2
@@ -42,6 +42,10 @@ class TrainerConfig:
     nb_classes: int = 1
     max_grad_norm: float = 1.0
     progress_history: int = 1
+
+    @property
+    def criterion(self) -> Module:
+        return torch.nn.CrossEntropyLoss()
 
 
 class TrainerBase(ABC):
