@@ -59,9 +59,9 @@ class TrainerBase(ABC):
         self.model = model
 
         self.hparam_training = asdict(self.config)
-        keys_to_remove = ["prediction_evaluator", "criterion", "optimizer", "loggers"]
+        keys_to_remove = ["prediction_evaluator", "optimizer", "loggers", "teacher_model"]
         for key in keys_to_remove:
-            self.hparam_training.pop(key)
+            self.hparam_training.pop(key, None)
 
         if self.config.save_progress:
             if not os.path.exists(self.config.saving_dir):
