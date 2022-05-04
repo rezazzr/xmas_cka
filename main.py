@@ -1,7 +1,6 @@
 import argparse
 
 import numpy as np
-import torch
 from torchvision import datasets, transforms
 
 import trainers
@@ -46,7 +45,6 @@ def main(args):
         # This is simple pretraining
         training_config = TrainerConfig(
             prediction_evaluator=PredictionBasedEvaluator(metrics=[Accuracy()]),
-            criterion=torch.nn.CrossEntropyLoss(),
             optimizer=None,
             seed_value=args.seed_value,
             nb_epochs=40,
@@ -115,18 +113,21 @@ def main(args):
             save_progress=True,
             saving_dir="model_zoo",
             use_scheduler=True,
-            nb_warmup_steps=500,
+            nb_warmup_steps=0,
             learning_rate=1e-3,
             experiment_name=args.experiment_name,
             nb_classes=10,
             max_grad_norm=1.0,
             progress_history=1,
-            cka_alpha=20.0,
+            cka_alpha=500.0,
             cka_difference_function="LogCosh",
             target_cka=target_cka,
-            distillation_temp=2,
+            distillation_temp=0.1,
             teacher_model=teacher_model,
             hard_labels=True if args.with_hard_labels else False,
+            upper_bound_acc=85.9,
+            acc_tolerance=1.0,
+            reduction_factor=0.8,
         )
         if args.with_hard_labels:
             trainer = trainers.maptraining.CEMapTrainer(
