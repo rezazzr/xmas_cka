@@ -10,7 +10,7 @@ class VGG(torch.nn.Module):
 
         self.layers += [
             nn.Sequential(
-                nn.Conv2d(3 * self.width, 16 * self.width, kernel_size=3),
+                nn.Conv2d(3, 16 * self.width, kernel_size=3),
                 nn.BatchNorm2d(16 * self.width),
                 nn.ReLU(inplace=True),
             ),
