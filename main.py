@@ -35,7 +35,7 @@ def main(args):
     cifar_data_valid = datasets.CIFAR10(
         root=args.data_root, train=False, transform=cifar_transform_valid, download=True
     )
-    model = VGG()
+    model = VGG(width=args.network_width)
     if args.model_path:
         model.load_state_dict(safely_load_state_dict(args.model_path))
     else:
@@ -94,7 +94,7 @@ def main(args):
         # Now we need to see whether we want to train with hard or soft labels (CE vs. Distillation)
         teacher_model = None
         if not args.with_hard_labels:
-            teacher_model = VGG()
+            teacher_model = VGG(width=args.network_width)
             teacher_model.load_state_dict(safely_load_state_dict(args.model_path))
             teacher_model.to(device)
             teacher_model.eval()
@@ -179,6 +179,13 @@ if __name__ == "__main__":
         "Hard label trains with CE vs. soft label uses distillation to train.",
         action="store_true",
         default=False,
+    )
+
+    parser.add_argument(
+        "--network_width",
+        help="x times the width of the base model.",
+        type=int,
+        default=1,
     )
 
     args = parser.parse_args()
