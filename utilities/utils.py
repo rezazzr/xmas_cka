@@ -159,3 +159,24 @@ class AccumulateForLogging:
             self.value = 0.0
             return normalized_value
         return None
+
+
+class MultiplicativeScalingFactorScheduler:
+    """
+    The idea here is that if a metric we are tracking falls bellow a certain threshold of tolerance, then
+    we would want to scale the current_value parameter, which is usually used as a multiplier to enforce some kind of
+    importance.
+    """
+
+    def __init__(self, initial_value: float, multiplier: float, original_metric_value: float, tolerance: float):
+        self.original_metric_value = original_metric_value
+        self.tolerance = tolerance
+        self.multiplier = multiplier
+        self.initial_value = initial_value
+        self.current_value = initial_value
+
+    def __call__(self, metric_value: float):
+        difference = self.original_metric_value - metric_value
+        if difference > self.tolerance:
+            self.current_value *= self.multiplier
+        return self.current_value
