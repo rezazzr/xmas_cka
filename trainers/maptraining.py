@@ -9,7 +9,7 @@ from evaluators.base import RepresentationBasedEvaluator
 from losses.cka_map_loss import CKAMapLossCE, CKAMapLossDistill
 from metrics.cka import CKA
 from trainers.base import TrainerBase, TrainerConfig
-from utilities.utils import AccumulateForLogging
+from utilities.utils import AccumulateForLogging, MultiplicativeScalingFactorScheduler
 
 
 @dataclass
@@ -20,17 +20,35 @@ class MapTrainingConfig(TrainerConfig):
     hard_labels: bool = True
     teacher_model: Optional[Module] = None
     distillation_temp: float = 2
+    upper_bound_acc: Optional[float] = None
+    acc_tolerance: float = 1.0
+    reduction_factor: float = 0.5
 
-    @property
-    def criterion(self) -> Module:
-        if self.hard_labels:
-            return CKAMapLossCE(alpha=self.cka_alpha, mse=True if self.cka_difference_function == "MSE" else False)
-        return CKAMapLossDistill(
-            teacher=self.teacher_model,
-            alpha=self.cka_alpha,
-            mse=True if self.cka_difference_function == "MSE" else False,
-            temp=self.distillation_temp,
+    def __post_init__(self):
+        self.dynamic_scheduler: Optional[MultiplicativeScalingFactorScheduler] = (
+            MultiplicativeScalingFactorScheduler(
+                initial_value=self.cka_alpha,
+                multiplier=self.reduction_factor,
+                original_metric_value=self.upper_bound_acc,
+                tolerance=self.acc_tolerance,
+            )
+            if self.upper_bound_acc is not None
+            else None
         )
+        if self.hard_labels:
+            self.criterion = CKAMapLossCE(
+                alpha=self.cka_alpha,
+                mse=True if self.cka_difference_function == "MSE" else False,
+                dynamic_scheduler=self.dynamic_scheduler,
+            )
+        else:
+            self.criterion = CKAMapLossDistill(
+                teacher=self.teacher_model,
+                alpha=self.cka_alpha,
+                mse=True if self.cka_difference_function == "MSE" else False,
+                temp=self.distillation_temp,
+                dynamic_scheduler=self.dynamic_scheduler,
+            )
 
 
 class CEMapTrainer(TrainerBase):
@@ -81,6 +99,11 @@ class CEMapTrainer(TrainerBase):
         representation_evaluator.record_representations_set_1(model=self.model, dataset=self.valid_dataset)
         cka_results = representation_evaluator.compute_metrics()["CKA"]
         self.log(metric_name="CKA_Map", metric_value=cka_results)
+
+    def accuracy_got_updated_with(self, accuracy_value: float):
+        if self.config.dynamic_scheduler is not None:
+            current_multiplier_value = self.config.dynamic_scheduler(metric_value=accuracy_value)
+            self.log("cka_multiplier", current_multiplier_value)
 
 
 class DistillMapTrainer(TrainerBase):
@@ -134,3 +157,8 @@ class DistillMapTrainer(TrainerBase):
         representation_evaluator.record_representations_set_1(model=self.model, dataset=self.valid_dataset)
         cka_results = representation_evaluator.compute_metrics()["CKA"]
         self.log(metric_name="CKA_Map", metric_value=cka_results)
+
+    def accuracy_got_updated_with(self, accuracy_value: float):
+        if self.config.dynamic_scheduler is not None:
+            current_multiplier_value = self.config.dynamic_scheduler(metric_value=accuracy_value)
+            self.log("cka_multiplier", current_multiplier_value)
