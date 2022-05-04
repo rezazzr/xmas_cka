@@ -43,9 +43,8 @@ class TrainerConfig:
     max_grad_norm: float = 1.0
     progress_history: int = 1
 
-    @property
-    def criterion(self) -> Module:
-        return torch.nn.CrossEntropyLoss()
+    def __post_init__(self):
+        self.criterion = torch.nn.CrossEntropyLoss()
 
 
 class TrainerBase(ABC):
@@ -59,7 +58,14 @@ class TrainerBase(ABC):
         self.model = model
 
         self.hparam_training = asdict(self.config)
-        keys_to_remove = ["prediction_evaluator", "optimizer", "loggers", "teacher_model"]
+        keys_to_remove = [
+            "prediction_evaluator",
+            "optimizer",
+            "loggers",
+            "teacher_model",
+            "criterion",
+            "dynamic_scheduler",
+        ]
         for key in keys_to_remove:
             self.hparam_training.pop(key, None)
 
@@ -140,11 +146,13 @@ class TrainerBase(ABC):
                 evaluator_results = self.config.prediction_evaluator.evaluate(
                     model=self.model, dataset=self.valid_dataset, nb_classes=self.config.nb_classes
                 )
-                self.hparam_metrics = dict()
+                self.hparam_metrics = {}
                 for metric_name, metric_value in evaluator_results.items():
                     self.hparam_metrics[f"hparams/{metric_name}"] = metric_value
-                    metric_name = f"{metric_name}/Evaluation"
-                    self.log(metric_name=metric_name, metric_value=metric_value)
+                    metric_name_for_logging = f"{metric_name}/Evaluation"
+                    self.log(metric_name=metric_name_for_logging, metric_value=metric_value)
+                    if metric_name == "Accuracy":
+                        self.accuracy_got_updated_with(metric_value)
                 end_time_eval = time.time()
                 print(f"Evaluation took: {end_time_eval - start_time_eval}s.")
 
@@ -177,6 +185,9 @@ class TrainerBase(ABC):
 
     @abstractmethod
     def after_training(self):
+        pass
+
+    def accuracy_got_updated_with(self, accuracy_value: float):
         pass
 
     def terminate_logging(self):
