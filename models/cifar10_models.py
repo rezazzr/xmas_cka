@@ -69,7 +69,7 @@ class VGG(torch.nn.Module):
             activations.append(features)
             features = layer(features)
 
-        features = self.fc(features.view(-1, 64))
+        features = self.fc(features.view(-1, 64 * self.width))
 
         if intermediate_activations_required:
             activations.pop(0)  # no need to have the original image
