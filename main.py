@@ -103,7 +103,7 @@ def main(args):
             prediction_evaluator=PredictionBasedEvaluator(metrics=[Accuracy()]),
             optimizer=None,
             seed_value=args.seed_value,
-            nb_epochs=50,
+            nb_epochs=20,
             num_workers=10,
             batch_size=128,
             logging_step=100,
