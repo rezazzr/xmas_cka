@@ -179,4 +179,6 @@ class MultiplicativeScalingFactorScheduler:
         difference = self.original_metric_value - metric_value
         if difference > self.tolerance:
             self.current_value *= self.multiplier
+        else:
+            self.current_value /= self.multiplier
         return self.current_value
