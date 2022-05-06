@@ -88,6 +88,8 @@ def main(args):
             target_cka = np.load(args.cka_path)
             target_cka[7, 0] = 1
             target_cka[0, 7] = 1
+        elif args.experiment_name.startswith("PretrainedMap"):
+            target_cka = np.load(args.cka_path)
         else:
             raise Exception("Experiment name provided is not supported.", args.experiment_name)
 
