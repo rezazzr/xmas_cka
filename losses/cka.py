@@ -2,7 +2,8 @@ import math
 
 import numpy as np
 import torch
-
+from torch.nn import Module
+from torch import Tensor
 
 class TorchCKA(torch.nn.Module):
     def __init__(self, device):
@@ -47,7 +48,9 @@ class TorchCKA(torch.nn.Module):
         var2 = torch.sqrt(self.kernel_HSIC(Y, Y, sigma))
         return hsic / (var1 * var2)
 
-    def forward(self, X: torch.Tensor, Y: torch.Tensor, linear: bool = True):
+    def forward(self, X: Tensor, Y: Tensor, linear: bool = True):
         if linear:
             return self.linear_CKA(X=X, Y=Y)
         return self.kernel_CKA(X=X, Y=Y)
+
+class BatchCKA(Module):
