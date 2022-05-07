@@ -5,9 +5,9 @@ import numpy as np
 from torch.nn import Module
 from torch.utils.data import Dataset
 
-from evaluators.base import RepresentationBasedEvaluator
+from evaluators.base import BatchRepresentationBasedEvaluator
 from losses.cka_map_loss import CKAMapLossCE, CKAMapLossDistill
-from metrics.cka import CKA
+from metrics.cka import BatchCKA
 from trainers.base import TrainerBase, TrainerConfig
 from utilities.utils import AccumulateForLogging, MultiplicativeScalingFactorScheduler
 
@@ -93,11 +93,11 @@ class CEMapTrainer(TrainerBase):
             )
 
     def after_training(self):
-        representation_evaluator = RepresentationBasedEvaluator(
-            metrics=[CKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
+        representation_evaluator = BatchRepresentationBasedEvaluator(
+            metrics=[BatchCKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
         )
-        representation_evaluator.record_representations_set_1(model=self.model, dataset=self.valid_dataset)
-        cka_results = representation_evaluator.compute_metrics()["CKA"]
+
+        cka_results = representation_evaluator.evaluate(model_1=self.model, dataset=self.valid_dataset)["BatchCKA"]
         self.log(metric_name="CKA_Map", metric_value=cka_results)
 
     def accuracy_got_updated_with(self, accuracy_value: float):
@@ -151,11 +151,11 @@ class DistillMapTrainer(TrainerBase):
             )
 
     def after_training(self):
-        representation_evaluator = RepresentationBasedEvaluator(
-            metrics=[CKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
+        representation_evaluator = BatchRepresentationBasedEvaluator(
+            metrics=[BatchCKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
         )
-        representation_evaluator.record_representations_set_1(model=self.model, dataset=self.valid_dataset)
-        cka_results = representation_evaluator.compute_metrics()["CKA"]
+
+        cka_results = representation_evaluator.evaluate(model_1=self.model, dataset=self.valid_dataset)["BatchCKA"]
         self.log(metric_name="CKA_Map", metric_value=cka_results)
 
     def accuracy_got_updated_with(self, accuracy_value: float):
