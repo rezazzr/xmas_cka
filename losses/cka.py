@@ -5,6 +5,8 @@ import torch
 from torch.nn import Module
 from torch import Tensor
 
+from utilities.utils import to_numpy
+
 
 class TorchCKA(Module):
     def __init__(self, device):
@@ -84,10 +86,6 @@ class BatchCKA(Module):
         unbiased_hsic = 1 / (n * (n - 3)) * (trace + middle_argument - last_argument)
 
         return unbiased_hsic
-
-    @staticmethod
-    def get_cka_from_precomputed_hsic_values(numerator: Tensor, denominator_1: Tensor, denominator_2: Tensor):
-        return numerator / torch.sqrt(denominator_1 * denominator_2)
 
     def forward(
         self, X: Tensor, Y: Tensor, need_internals: bool = False
