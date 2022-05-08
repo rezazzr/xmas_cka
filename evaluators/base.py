@@ -2,11 +2,11 @@ from typing import Dict, Sequence, List, Optional
 
 import numpy as np
 from torch import inference_mode, Tensor
-from torch.nn import Module, Sequential, BatchNorm2d, AdaptiveAvgPool2d, ModuleList
+from torch.nn import Module
 from torch.utils.data import Dataset, DataLoader
 
 from metrics.base import PredictionBasedMetric, RepresentationBasedMetric, BatchRepresentationBasedMetric
-from utilities.utils import gpu_information_summary, to_numpy
+from utilities.utils import gpu_information_summary, to_numpy, register_all_layers
 
 
 class PredictionBasedEvaluator:
@@ -123,6 +123,7 @@ class BatchRepresentationBasedEvaluator:
     def evaluate(self, model_1: Module, dataset: Dataset, model_2: Optional[Module] = None) -> Dict[str, float]:
         activations_model_1 = []
         activations_model_2 = []
+        handles_model_2 = None
 
         def model_1_hook_fn(m, i, o):
             activations_model_1.append(o)
@@ -132,11 +133,11 @@ class BatchRepresentationBasedEvaluator:
 
         model_1.to(self.device)
         model_1.eval()
-        get_all_layers(model_1, model_1_hook_fn)
+        handles_model_1 = register_all_layers(model_1, model_1_hook_fn)
         if model_2 is not None:
             model_2.to(self.device)
             model_2.eval()
-            get_all_layers(model_2, model_2_hook_fn)
+            handles_model_2 = register_all_layers(model_2, model_2_hook_fn)
 
         eval_loader = DataLoader(
             dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers, pin_memory=True
@@ -160,6 +161,14 @@ class BatchRepresentationBasedEvaluator:
                 activations_model_1 = []
                 activations_model_2 = []
 
+        # remove hooks before finishing
+        if len(handles_model_1) > 0:
+            for h in handles_model_1:
+                h.remove()
+        if handles_model_2 is not None:
+            for h in handles_model_2:
+                h.remove()
+
         return self.compute()
 
     def eval_one_batch(self, activations_1: List[Tensor], activations_2: Optional[List[Tensor]]) -> None:
@@ -176,17 +185,3 @@ class BatchRepresentationBasedEvaluator:
     def initialize_metrics(self, activations_1: List[Tensor], activations_2: Optional[List[Tensor]]) -> None:
         for metric in self.metrics:
             metric.initialize_metric(activations_1=activations_1, activations_2=activations_2)
-
-
-def get_all_layers(net, hook_fn):
-    for name, layer in net.named_children():
-        # If it is a sequential, don't register a hook on it
-        # but recursively register hook on all it's module children
-        if isinstance(layer, Sequential):
-            get_all_layers(layer, hook_fn)
-        elif isinstance(layer, ModuleList):
-            get_all_layers(layer, hook_fn)
-        else:
-            # it's a non sequential. Register a hook
-            if not isinstance(layer, BatchNorm2d) and not isinstance(layer, AdaptiveAvgPool2d):
-                layer.register_forward_hook(hook_fn)
