@@ -64,7 +64,7 @@ class BatchCKA(Module):
 
     def _unbiased_HSIC(self, K: Tensor, L: Tensor) -> Tensor:
         n = K.shape[0]
-        ones = torch.ones([n, n], device=self.device)
+        ones = torch.ones(n, device=self.device)
 
         K.fill_diagonal_(0)
         L.fill_diagonal_(0)
