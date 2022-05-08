@@ -116,6 +116,17 @@ class CEMapTrainer(TrainerBase):
             current_multiplier_value = self.config.dynamic_scheduler(metric_value=accuracy_value)
             self.log("cka_multiplier", current_multiplier_value)
 
+    def before_evaluation(self):
+        if len(self.handles) > 0:
+            for h in self.handles:
+                h.remove()
+
+    def after_evaluation(self):
+        def hook_fn(m, i, o):
+            self.activations.append(o)
+
+        self.handles = register_all_layers(self.model, hook_fn)
+
 
 class DistillMapTrainer(TrainerBase):
     def __init__(
@@ -184,3 +195,14 @@ class DistillMapTrainer(TrainerBase):
         if self.config.dynamic_scheduler is not None:
             current_multiplier_value = self.config.dynamic_scheduler(metric_value=accuracy_value)
             self.log("cka_multiplier", current_multiplier_value)
+
+    def before_evaluation(self):
+        if len(self.handles) > 0:
+            for h in self.handles:
+                h.remove()
+
+    def after_evaluation(self):
+        def hook_fn(m, i, o):
+            self.activations.append(o)
+
+        self.handles = register_all_layers(self.model, hook_fn)

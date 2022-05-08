@@ -142,6 +142,7 @@ class TrainerBase(ABC):
                 self.config.logging_step > 0
                 and self.global_step % self.config.logging_step == (self.config.logging_step - 1)
             ) and self.config.prediction_evaluator is not None:
+                self.before_evaluation()
                 start_time_eval = time.time()
                 evaluator_results = self.config.prediction_evaluator.evaluate(
                     model=self.model, dataset=self.valid_dataset, nb_classes=self.config.nb_classes
@@ -155,6 +156,7 @@ class TrainerBase(ABC):
                         self.accuracy_got_updated_with(metric_value)
                 end_time_eval = time.time()
                 print(f"Evaluation took: {end_time_eval - start_time_eval}s.")
+                self.after_evaluation()
 
     def train_iter(self, training_instance: Tuple[torch.Tensor, torch.Tensor]) -> Union[float, Tuple[float, ...]]:
         # for each iteration of training call this function
@@ -188,6 +190,12 @@ class TrainerBase(ABC):
         pass
 
     def accuracy_got_updated_with(self, accuracy_value: float):
+        pass
+
+    def before_evaluation(self):
+        pass
+
+    def after_evaluation(self):
         pass
 
     def terminate_logging(self):
