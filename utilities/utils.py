@@ -197,4 +197,4 @@ def register_all_layers(model: Module, hook_fn):
             if not isinstance(layer, BatchNorm2d) and not isinstance(layer, AdaptiveAvgPool2d):
                 handle = layer.register_forward_hook(hook_fn)
                 handles.append(handle)
-        return handles
+    return handles
