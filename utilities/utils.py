@@ -184,15 +184,16 @@ class MultiplicativeScalingFactorScheduler:
         return self.current_value
 
 
-def register_all_layers(model: Module, hook_fn):
-    handles = []
+def register_all_layers(model: Module, hook_fn, handles=None):
+    if handles is None:
+        handles = []
     for name, layer in model.named_children():
         # If it is a sequential, don't register a hook on it
         # but recursively register hook on all it's module children
         if isinstance(layer, Sequential):
-            register_all_layers(layer, hook_fn)
+            register_all_layers(layer, hook_fn, handles)
         elif isinstance(layer, ModuleList):
-            register_all_layers(layer, hook_fn)
+            register_all_layers(layer, hook_fn, handles)
         else:
             if not isinstance(layer, BatchNorm2d) and not isinstance(layer, AdaptiveAvgPool2d):
                 handle = layer.register_forward_hook(hook_fn)
