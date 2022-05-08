@@ -67,8 +67,8 @@ class BatchCKA(Module):
         ones = torch.ones([n, 1], device=self.device)
 
         # set diagonal to 0
-        K = K * (1 - torch.eye(n, n))
-        L = L * (1 - torch.eye(n, n))
+        K = K * (1 - torch.eye(n, n, device=self.device))
+        L = L * (1 - torch.eye(n, n, device=self.device))
 
         trace = torch.trace(torch.matmul(K, L))
 
