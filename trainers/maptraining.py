@@ -75,6 +75,7 @@ class CEMapTrainer(TrainerBase):
         self.handles = register_all_layers(self.model, hook_fn)
 
     def compute_loss(self, **kwargs) -> Tuple[float, ...]:
+        self.activations = []
         training_features = kwargs["training_features"]
         training_targets = kwargs["training_targets"]
         outputs = self.model(training_features)
@@ -140,6 +141,7 @@ class DistillMapTrainer(TrainerBase):
         self.handles = register_all_layers(self.model, hook_fn)
 
     def compute_loss(self, **kwargs) -> Tuple[float, ...]:
+        self.activations = []
         training_features = kwargs["training_features"]
         outputs = self.model(training_features)
         # with distillation loss
