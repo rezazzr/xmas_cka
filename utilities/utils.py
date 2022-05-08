@@ -10,7 +10,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from prettytable import PrettyTable
-from torch.nn import Module
+from torch.nn import Module, Sequential, ModuleList, BatchNorm2d, AdaptiveAvgPool2d
 from torch.optim.lr_scheduler import LambdaLR
 
 
@@ -182,3 +182,19 @@ class MultiplicativeScalingFactorScheduler:
         else:
             self.current_value /= self.multiplier
         return self.current_value
+
+
+def register_all_layers(model: Module, hook_fn):
+    handles = []
+    for name, layer in model.named_children():
+        # If it is a sequential, don't register a hook on it
+        # but recursively register hook on all it's module children
+        if isinstance(layer, Sequential):
+            register_all_layers(layer, hook_fn)
+        elif isinstance(layer, ModuleList):
+            register_all_layers(layer, hook_fn)
+        else:
+            if not isinstance(layer, BatchNorm2d) and not isinstance(layer, AdaptiveAvgPool2d):
+                handle = layer.register_forward_hook(hook_fn)
+                handles.append(handle)
+        return handles
