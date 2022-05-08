@@ -35,8 +35,8 @@ class BatchCKA(BatchRepresentationBasedMetric):
         self.processed_batches += 1
 
     def compute_metric(self) -> np.ndarray:
-        self.cka_map /= self.processed_batches
         self.cka_map = to_numpy(self.cka_map)
+        self.cka_map /= self.processed_batches
         final_map = np.zeros([self.cka_map.shape[0], self.cka_map.shape[1]])
         for i in range(final_map.shape[0]):
             for j in range(final_map.shape[1]):
