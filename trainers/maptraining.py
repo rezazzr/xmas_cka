@@ -9,7 +9,7 @@ from evaluators.base import BatchRepresentationBasedEvaluator
 from losses.cka_map_loss import CKAMapLossCE, CKAMapLossDistill
 from metrics.cka import BatchCKA
 from trainers.base import TrainerBase, TrainerConfig
-from utilities.utils import AccumulateForLogging, MultiplicativeScalingFactorScheduler
+from utilities.utils import AccumulateForLogging, MultiplicativeScalingFactorScheduler, register_all_layers
 
 
 @dataclass
@@ -67,19 +67,26 @@ class CEMapTrainer(TrainerBase):
         self.training_loss_ce = AccumulateForLogging(name="ce", accumulation=10)
         self.training_loss_cka = AccumulateForLogging(name="cka", accumulation=10)
         self.hparam_training.pop("target_cka")
+        self.activations = []
+
+        def hook_fn(m, i, o):
+            self.activations.append(o)
+
+        self.handles = register_all_layers(self.model, hook_fn)
 
     def compute_loss(self, **kwargs) -> Tuple[float, ...]:
         training_features = kwargs["training_features"]
         training_targets = kwargs["training_targets"]
-        activations, outputs = self.model(training_features, intermediate_activations_required=True)
+        outputs = self.model(training_features)
         # CE loss
         loss, ce_loss, map_loss = self.config.criterion(
             y_true=training_targets,
             y_prediction=outputs,
-            model_activations=activations,
+            model_activations=self.activations,
             target_map=self.config.target_cka,
         )
         loss.backward()
+        self.activations = []
         return loss.item(), ce_loss.item(), map_loss.item()
 
     def log_training_loss(self, loss: Tuple[float, ...]):
@@ -93,6 +100,9 @@ class CEMapTrainer(TrainerBase):
             )
 
     def after_training(self):
+        if len(self.handles) > 0:
+            for h in self.handles:
+                h.remove()
         representation_evaluator = BatchRepresentationBasedEvaluator(
             metrics=[BatchCKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
         )
@@ -122,18 +132,25 @@ class DistillMapTrainer(TrainerBase):
         self.training_loss_ce = AccumulateForLogging(name="distillation", accumulation=10)
         self.training_loss_cka = AccumulateForLogging(name="cka", accumulation=10)
         self.hparam_training.pop("target_cka")
+        self.activations = []
+
+        def hook_fn(m, i, o):
+            self.activations.append(o)
+
+        self.handles = register_all_layers(self.model, hook_fn)
 
     def compute_loss(self, **kwargs) -> Tuple[float, ...]:
         training_features = kwargs["training_features"]
-        activations, outputs = self.model(training_features, intermediate_activations_required=True)
+        outputs = self.model(training_features)
         # with distillation loss
         loss, distill_loss, map_loss = self.config.criterion(
             features=training_features,
             logits=outputs,
-            model_activations=activations,
+            model_activations=self.activations,
             target_map=self.config.target_cka,
         )
         loss.backward()
+        self.activations = []
         return loss.item(), distill_loss.item(), map_loss.item()
 
     def log_training_loss(self, loss: Tuple[float, ...]):
@@ -151,6 +168,9 @@ class DistillMapTrainer(TrainerBase):
             )
 
     def after_training(self):
+        if len(self.handles) > 0:
+            for h in self.handles:
+                h.remove()
         representation_evaluator = BatchRepresentationBasedEvaluator(
             metrics=[BatchCKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
         )
