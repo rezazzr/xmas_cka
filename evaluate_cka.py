@@ -6,7 +6,7 @@ from torchvision import datasets, transforms
 
 from evaluators.base import BatchRepresentationBasedEvaluator
 from metrics.cka import BatchCKA
-from models.cifar10_models import VGG
+from models.cifar_10_models.vgg import VGG
 from utilities.utils import xavier_uniform_initialize, gpu_information_summary, set_seed, safely_load_state_dict
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])

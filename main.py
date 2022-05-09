@@ -6,7 +6,7 @@ from torchvision import datasets, transforms
 import trainers
 from evaluators.base import PredictionBasedEvaluator
 from metrics.accuracy import Accuracy
-from models.cifar10_models import VGG
+from models.cifar_10_models.vgg import VGG
 from target_maps.analytical import ALL_ONES, ALL_ZEROS
 from target_maps.comical import GOBLIN, CARROT, SWORD, BOW_ARROW, XMASS_TREE
 from trainers.base import TrainerConfig

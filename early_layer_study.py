@@ -6,7 +6,7 @@ from torchvision import datasets, transforms
 
 from evaluators.base import PredictionBasedEvaluator
 from metrics.accuracy import Accuracy
-from models.cifar10_models import VGG7
+from models.cifar_10_models.vgg import VGG7
 from trainers.base import TrainerConfig
 from trainers.pretraining import Trainer
 from utilities.utils import xavier_uniform_initialize, gpu_information_summary, set_seed
