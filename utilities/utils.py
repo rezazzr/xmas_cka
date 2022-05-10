@@ -197,7 +197,7 @@ def register_all_layers(model: Module, hook_fn, handles=None):
         elif isinstance(layer, ModuleList):
             register_all_layers(layer, hook_fn, handles)
         elif isinstance(layer, BasicBlock):
-            register_all_layers(layer)
+            register_all_layers(layer, hook_fn, handles)
         else:
             if not isinstance(layer, BatchNorm2d) and not isinstance(layer, AdaptiveAvgPool2d):
                 handle = layer.register_forward_hook(hook_fn)
