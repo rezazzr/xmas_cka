@@ -6,6 +6,7 @@ from torchvision import datasets, transforms
 import trainers
 from evaluators.base import PredictionBasedEvaluator
 from metrics.accuracy import Accuracy
+from models.cifar_10_models.resnet import ResNet34
 from models.cifar_10_models.vgg import VGG
 from target_maps.analytical import ALL_ONES, ALL_ZEROS
 from target_maps.comical import GOBLIN, CARROT, SWORD, BOW_ARROW, XMASS_TREE
@@ -35,7 +36,15 @@ def main(args):
     cifar_data_valid = datasets.CIFAR10(
         root=args.data_root, train=False, transform=cifar_transform_valid, download=True
     )
-    model = VGG(width=args.network_width)
+
+    if args.model_type.lower() == "vgg":
+        model = VGG(width=args.network_width)
+    elif args.model_type.lower() == "resnet":
+        model = ResNet34(width=args.network_width)
+    else:
+        error_message = f"Unsupported --model_type: {args.model_type}"
+        raise Exception(error_message)
+
     if args.model_path:
         model.load_state_dict(safely_load_state_dict(args.model_path))
     else:
@@ -96,7 +105,13 @@ def main(args):
         # Now we need to see whether we want to train with hard or soft labels (CE vs. Distillation)
         teacher_model = None
         if not args.with_hard_labels:
-            teacher_model = VGG(width=args.network_width)
+            if args.model_type.lower() == "vgg":
+                teacher_model = VGG(width=args.network_width)
+            elif args.model_type.lower() == "resnet":
+                teacher_model = ResNet34(width=args.network_width)
+            else:
+                error_message = f"Unsupported --model_type: {args.model_type}"
+                raise Exception(error_message)
             teacher_model.load_state_dict(safely_load_state_dict(args.model_path))
             teacher_model.to(device)
             teacher_model.eval()
@@ -127,7 +142,7 @@ def main(args):
             distillation_temp=0.1,
             teacher_model=teacher_model,
             hard_labels=True if args.with_hard_labels else False,
-            upper_bound_acc=85.9,
+            upper_bound_acc=args.accuracy_upper_bound,
             acc_tolerance=1.0,
             reduction_factor=0.8,
         )
@@ -188,6 +203,22 @@ if __name__ == "__main__":
         help="x times the width of the base model.",
         type=int,
         default=1,
+    )
+
+    parser.add_argument(
+        "--accuracy_upper_bound",
+        help="In case of optimizing w.r.t another network and taking the said network's accuracy in to account"
+        "this parameter accounts for the said accuracy upper bound.",
+        type=float,
+        default=100.0,
+    )
+
+    parser.add_argument(
+        "--model_type",
+        help="Indicate the model architecture type from the available choices.",
+        type=str,
+        choices=["VGG", "ResNet"],
+        default="VGG",
     )
 
     args = parser.parse_args()
