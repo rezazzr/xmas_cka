@@ -13,6 +13,8 @@ from prettytable import PrettyTable
 from torch.nn import Module, Sequential, ModuleList, BatchNorm2d, AdaptiveAvgPool2d
 from torch.optim.lr_scheduler import LambdaLR
 
+from models.cifar_10_models.resnet import BasicBlock
+
 
 def gpu_information_summary(show: bool = True) -> Tuple[int, torch.device]:
     """
@@ -194,6 +196,8 @@ def register_all_layers(model: Module, hook_fn, handles=None):
             register_all_layers(layer, hook_fn, handles)
         elif isinstance(layer, ModuleList):
             register_all_layers(layer, hook_fn, handles)
+        elif isinstance(layer, BasicBlock):
+            register_all_layers(layer)
         else:
             if not isinstance(layer, BatchNorm2d) and not isinstance(layer, AdaptiveAvgPool2d):
                 handle = layer.register_forward_hook(hook_fn)
