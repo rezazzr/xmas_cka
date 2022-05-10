@@ -47,12 +47,10 @@ def to_numpy(tensor: torch.Tensor) -> np.ndarray:
 
 
 def xavier_uniform_initialize(layer: Module):
-    if type(layer) == nn.Linear:
+    if type(layer) == nn.Linear or type(layer) == nn.Conv2d:
         nn.init.xavier_uniform_(layer.weight)
-        nn.init.constant_(layer.bias, 0)
-    if type(layer) == nn.Conv2d:
-        nn.init.xavier_uniform_(layer.weight)
-        nn.init.constant_(layer.bias, 0)
+        if layer.bias is not None:
+            nn.init.constant_(layer.bias, 0)
 
 
 def cosine_with_hard_restarts_schedule_with_warmup(
