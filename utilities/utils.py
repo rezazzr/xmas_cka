@@ -50,9 +50,15 @@ def xavier_uniform_initialize(layer: Module):
     if type(layer) == nn.Linear:
         nn.init.xavier_uniform_(layer.weight)
         nn.init.constant_(layer.bias, 0)
-    if type(layer) == nn.Conv2d:
+    elif type(layer) == nn.Conv2d:
         nn.init.xavier_uniform_(layer.weight)
         nn.init.constant_(layer.bias, 0)
+    elif type(layer) == nn.Sequential or type(layer) == nn.ModuleList or type(layer) == nn.ModuleDict or BasicBlock:
+        for sub_layer in layer.children():
+            xavier_uniform_initialize(sub_layer)
+    else:
+        error_message = f"Cannot initialize the layer type: {type(layer)}"
+        raise TypeError(error_message)
 
 
 def cosine_with_hard_restarts_schedule_with_warmup(
