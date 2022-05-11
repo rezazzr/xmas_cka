@@ -1,12 +1,11 @@
 from typing import Optional
 
 import torch
-
-from evaluators.base import RepresentationBasedEvaluator
-from metrics.cka import CKA
-from trainers.base import TrainerBase, TrainerConfig
 from torch.utils.data import Dataset
 
+from evaluators.base import BatchRepresentationBasedEvaluator
+from metrics.cka import BatchCKA
+from trainers.base import TrainerBase, TrainerConfig
 from utilities.utils import AccumulateForLogging
 
 
@@ -34,9 +33,9 @@ class Trainer(TrainerBase):
             self.log(metric_name=self.training_loss_tracker.name, metric_value=tracked_loss)
 
     def after_training(self):
-        representation_evaluator = RepresentationBasedEvaluator(
-            metrics=[CKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
+        representation_evaluator = BatchRepresentationBasedEvaluator(
+            metrics=[BatchCKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
         )
-        representation_evaluator.record_representations_set_1(model=self.model, dataset=self.valid_dataset)
-        cka_results = representation_evaluator.compute_metrics()["CKA"]
+
+        cka_results = representation_evaluator.evaluate(model_1=self.model, dataset=self.valid_dataset)["BatchCKA"]
         self.log(metric_name="CKA_Map", metric_value=cka_results)

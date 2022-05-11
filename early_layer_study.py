@@ -1,18 +1,13 @@
 import argparse
+import random
 
 import torch
-import random
-from evaluators.base import PredictionBasedEvaluator
-from losses.cka_map_loss import CKAMapLossCE
-from metrics.accuracy import Accuracy
-from models.cifar10_models import VGG, VGG7
 from torchvision import datasets, transforms
-import numpy as np
-from target_maps.analytical import ALL_ONES, ALL_ZEROS
-from target_maps.comical import GOBLIN, CARROT, SWORD, BOW_ARROW, XMASS_TREE
+
+from evaluators.base import PredictionBasedEvaluator
+from metrics.accuracy import Accuracy
+from models.cifar_10_models.vgg import VGG7
 from trainers.base import TrainerConfig
-from trainers.maptraining import MapTrainingConfig
-import trainers
 from trainers.pretraining import Trainer
 from utilities.utils import xavier_uniform_initialize, gpu_information_summary, set_seed
 

@@ -10,8 +10,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 from prettytable import PrettyTable
-from torch.nn import Module
+from torch.nn import Module, Sequential, ModuleList, BatchNorm2d, AdaptiveAvgPool2d
 from torch.optim.lr_scheduler import LambdaLR
+
+from models.cifar_10_models.resnet import BasicBlock
 
 
 def gpu_information_summary(show: bool = True) -> Tuple[int, torch.device]:
@@ -45,12 +47,10 @@ def to_numpy(tensor: torch.Tensor) -> np.ndarray:
 
 
 def xavier_uniform_initialize(layer: Module):
-    if type(layer) == nn.Linear:
+    if type(layer) == nn.Linear or type(layer) == nn.Conv2d:
         nn.init.xavier_uniform_(layer.weight)
-        nn.init.constant_(layer.bias, 0)
-    if type(layer) == nn.Conv2d:
-        nn.init.xavier_uniform_(layer.weight)
-        nn.init.constant_(layer.bias, 0)
+        if layer.bias is not None:
+            nn.init.constant_(layer.bias, 0)
 
 
 def cosine_with_hard_restarts_schedule_with_warmup(
@@ -150,7 +150,7 @@ class AccumulateForLogging:
         self.value = 0.0
         self.accumulated = 0
 
-    def __call__(self, value: float):
+    def __call__(self, value: float) -> typing.Optional[float]:
         self.value += value
         self.accumulated += 1
         if self.accumulated == self.accumulation:
@@ -159,3 +159,45 @@ class AccumulateForLogging:
             self.value = 0.0
             return normalized_value
         return None
+
+
+class MultiplicativeScalingFactorScheduler:
+    """
+    The idea here is that if a metric we are tracking falls bellow a certain threshold of tolerance, then
+    we would want to scale the current_value parameter, which is usually used as a multiplier to enforce some kind of
+    importance.
+    """
+
+    def __init__(self, initial_value: float, multiplier: float, original_metric_value: float, tolerance: float):
+        self.original_metric_value = original_metric_value
+        self.tolerance = tolerance
+        self.multiplier = multiplier
+        self.initial_value = initial_value
+        self.current_value = initial_value
+
+    def __call__(self, metric_value: float):
+        difference = self.original_metric_value - metric_value
+        if difference > self.tolerance:
+            self.current_value *= self.multiplier
+        else:
+            self.current_value /= self.multiplier
+        return self.current_value
+
+
+def register_all_layers(model: Module, hook_fn, handles=None):
+    if handles is None:
+        handles = []
+    for name, layer in model.named_children():
+        # If it is a sequential, don't register a hook on it
+        # but recursively register hook on all it's module children
+        if isinstance(layer, Sequential):
+            register_all_layers(layer, hook_fn, handles)
+        elif isinstance(layer, ModuleList):
+            register_all_layers(layer, hook_fn, handles)
+        elif isinstance(layer, BasicBlock):
+            register_all_layers(layer, hook_fn, handles)
+        else:
+            if not isinstance(layer, BatchNorm2d) and not isinstance(layer, AdaptiveAvgPool2d):
+                handle = layer.register_forward_hook(hook_fn)
+                handles.append(handle)
+    return handles

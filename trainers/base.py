@@ -18,12 +18,12 @@ from utilities.utils import (
     CheckPointingConfig,
 )
 import time
+from torch.nn import Module
 
 
 @dataclass
 class TrainerConfig:
     prediction_evaluator: Optional[PredictionBasedEvaluator] = None
-    criterion: torch.nn.Module = torch.nn.CrossEntropyLoss()
     optimizer: Optional[torch.optim.Optimizer] = None
     seed_value: int = 1609
     nb_epochs: int = 2
@@ -43,6 +43,9 @@ class TrainerConfig:
     max_grad_norm: float = 1.0
     progress_history: int = 1
 
+    def __post_init__(self):
+        self.criterion = torch.nn.CrossEntropyLoss()
+
 
 class TrainerBase(ABC):
     @abstractmethod
@@ -55,9 +58,16 @@ class TrainerBase(ABC):
         self.model = model
 
         self.hparam_training = asdict(self.config)
-        keys_to_remove = ["prediction_evaluator", "criterion", "optimizer", "loggers"]
+        keys_to_remove = [
+            "prediction_evaluator",
+            "optimizer",
+            "loggers",
+            "teacher_model",
+            "criterion",
+            "dynamic_scheduler",
+        ]
         for key in keys_to_remove:
-            self.hparam_training.pop(key)
+            self.hparam_training.pop(key, None)
 
         if self.config.save_progress:
             if not os.path.exists(self.config.saving_dir):
@@ -132,17 +142,21 @@ class TrainerBase(ABC):
                 self.config.logging_step > 0
                 and self.global_step % self.config.logging_step == (self.config.logging_step - 1)
             ) and self.config.prediction_evaluator is not None:
+                self.before_evaluation()
                 start_time_eval = time.time()
                 evaluator_results = self.config.prediction_evaluator.evaluate(
                     model=self.model, dataset=self.valid_dataset, nb_classes=self.config.nb_classes
                 )
-                self.hparam_metrics = dict()
+                self.hparam_metrics = {}
                 for metric_name, metric_value in evaluator_results.items():
                     self.hparam_metrics[f"hparams/{metric_name}"] = metric_value
-                    metric_name = f"{metric_name}/Evaluation"
-                    self.log(metric_name=metric_name, metric_value=metric_value)
+                    metric_name_for_logging = f"{metric_name}/Evaluation"
+                    self.log(metric_name=metric_name_for_logging, metric_value=metric_value)
+                    if metric_name == "Accuracy":
+                        self.accuracy_got_updated_with(metric_value)
                 end_time_eval = time.time()
                 print(f"Evaluation took: {end_time_eval - start_time_eval}s.")
+                self.after_evaluation()
 
     def train_iter(self, training_instance: Tuple[torch.Tensor, torch.Tensor]) -> Union[float, Tuple[float, ...]]:
         # for each iteration of training call this function
@@ -173,6 +187,15 @@ class TrainerBase(ABC):
 
     @abstractmethod
     def after_training(self):
+        pass
+
+    def accuracy_got_updated_with(self, accuracy_value: float):
+        pass
+
+    def before_evaluation(self):
+        pass
+
+    def after_evaluation(self):
         pass
 
     def terminate_logging(self):
