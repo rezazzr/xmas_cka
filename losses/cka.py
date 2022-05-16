@@ -18,17 +18,18 @@ class TorchCKA(Module):
         H = identity - unit / n
         return torch.matmul(torch.matmul(H, K), H)
 
-    def rbf(self, X, sigma=None):
+    def rbf(self, X, sigma: float):
         GX = torch.matmul(X, X.T)
         KX = torch.diag(GX) - GX + (torch.diag(GX) - GX).T
-        if sigma is None:
-            mdist = torch.median(KX[KX != 0])
-            sigma = math.sqrt(mdist)
+        # get the median and place it to mdist, then multiply by the scaling factor sigma to get the final sigma
+        mdist = torch.median(KX[KX != 0])
+        mdist = math.sqrt(mdist)
+        sigma = mdist * sigma
         KX *= -0.5 / (sigma * sigma)
         KX = torch.exp(KX)
         return KX
 
-    def kernel_HSIC(self, X, Y, sigma):
+    def kernel_HSIC(self, X, Y, sigma: float):
         return torch.sum(self.centering(self.rbf(X, sigma)) * self.centering(self.rbf(Y, sigma)))
 
     def linear_HSIC(self, X, Y):
@@ -43,7 +44,7 @@ class TorchCKA(Module):
 
         return hsic / (var1 * var2)
 
-    def kernel_CKA(self, X, Y, sigma=None):
+    def kernel_CKA(self, X, Y, sigma: float):
         hsic = self.kernel_HSIC(X, Y, sigma)
         var1 = torch.sqrt(self.kernel_HSIC(X, X, sigma))
         var2 = torch.sqrt(self.kernel_HSIC(Y, Y, sigma))
