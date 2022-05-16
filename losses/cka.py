@@ -2,10 +2,8 @@ import math
 from typing import Tuple, Union
 
 import torch
-from torch.nn import Module
 from torch import Tensor
-
-from utilities.utils import to_numpy
+from torch.nn import Module
 
 
 class TorchCKA(Module):
