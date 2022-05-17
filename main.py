@@ -145,6 +145,7 @@ def main(args):
             upper_bound_acc=args.accuracy_upper_bound,
             acc_tolerance=1.0,
             reduction_factor=0.8,
+            rbf_sigma=args.rbf_sigma,
         )
         if args.with_hard_labels:
             trainer = trainers.maptraining.CEMapTrainer(
@@ -219,6 +220,14 @@ if __name__ == "__main__":
         type=str,
         choices=["VGG", "ResNet"],
         default="VGG",
+    )
+
+    parser.add_argument(
+        "--rbf_sigma",
+        help="If the RBF sigma is == -1 then the linear CKA is computed, else the kernel CKA is computed and the sigma"
+        "will indicate the multiplier to the median distance.",
+        type=float,
+        default=-1,
     )
 
     args = parser.parse_args()

@@ -5,9 +5,9 @@ import numpy as np
 from torch.nn import Module
 from torch.utils.data import Dataset
 
-from evaluators.base import BatchRepresentationBasedEvaluator
+from evaluators.base import BatchRepresentationBasedEvaluator, RepresentationBasedEvaluator
 from losses.cka_map_loss import CKAMapLossCE, CKAMapLossDistill
-from metrics.cka import BatchCKA
+from metrics.cka import BatchCKA, CKA
 from trainers.base import TrainerBase, TrainerConfig
 from utilities.utils import AccumulateForLogging, MultiplicativeScalingFactorScheduler, register_all_layers
 
@@ -107,11 +107,20 @@ class CEMapTrainer(TrainerBase):
         if len(self.handles) > 0:
             for h in self.handles:
                 h.remove()
-        representation_evaluator = BatchRepresentationBasedEvaluator(
-            metrics=[BatchCKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
-        )
+        if self.config.rbf_sigma == -1:
+            representation_evaluator = BatchRepresentationBasedEvaluator(
+                metrics=[BatchCKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
+            )
 
-        cka_results = representation_evaluator.evaluate(model_1=self.model, dataset=self.valid_dataset)["BatchCKA"]
+            cka_results = representation_evaluator.evaluate(model_1=self.model, dataset=self.valid_dataset)["BatchCKA"]
+        else:
+            representation_evaluator = RepresentationBasedEvaluator(
+                metrics=[CKA(rbf_sigma=self.config.rbf_sigma)],
+                batch_size=self.config.batch_size,
+                num_workers=self.config.num_workers,
+            )
+            representation_evaluator.record_representations_set_1(model=self.model, dataset=self.valid_dataset)
+            cka_results = representation_evaluator.compute_metrics()["CKA"]
         self.log(metric_name="CKA_Map", metric_value=cka_results)
 
     def accuracy_got_updated_with(self, accuracy_value: float):
@@ -187,11 +196,20 @@ class DistillMapTrainer(TrainerBase):
         if len(self.handles) > 0:
             for h in self.handles:
                 h.remove()
-        representation_evaluator = BatchRepresentationBasedEvaluator(
-            metrics=[BatchCKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
-        )
+        if self.config.rbf_sigma == -1:
+            representation_evaluator = BatchRepresentationBasedEvaluator(
+                metrics=[BatchCKA()], batch_size=self.config.batch_size, num_workers=self.config.num_workers
+            )
 
-        cka_results = representation_evaluator.evaluate(model_1=self.model, dataset=self.valid_dataset)["BatchCKA"]
+            cka_results = representation_evaluator.evaluate(model_1=self.model, dataset=self.valid_dataset)["BatchCKA"]
+        else:
+            representation_evaluator = RepresentationBasedEvaluator(
+                metrics=[CKA(rbf_sigma=self.config.rbf_sigma)],
+                batch_size=self.config.batch_size,
+                num_workers=self.config.num_workers,
+            )
+            representation_evaluator.record_representations_set_1(model=self.model, dataset=self.valid_dataset)
+            cka_results = representation_evaluator.compute_metrics()["CKA"]
         self.log(metric_name="CKA_Map", metric_value=cka_results)
 
     def accuracy_got_updated_with(self, accuracy_value: float):
