@@ -23,6 +23,7 @@ class MapTrainingConfig(TrainerConfig):
     upper_bound_acc: Optional[float] = None
     acc_tolerance: float = 1.0
     reduction_factor: float = 0.5
+    rbf_sigma: float = -1
 
     def __post_init__(self):
         self.dynamic_scheduler: Optional[MultiplicativeScalingFactorScheduler] = (
@@ -40,6 +41,7 @@ class MapTrainingConfig(TrainerConfig):
                 alpha=self.cka_alpha,
                 mse=True if self.cka_difference_function == "MSE" else False,
                 dynamic_scheduler=self.dynamic_scheduler,
+                rbf_sigma=self.rbf_sigma,
             )
         else:
             self.criterion = CKAMapLossDistill(
@@ -48,6 +50,7 @@ class MapTrainingConfig(TrainerConfig):
                 mse=True if self.cka_difference_function == "MSE" else False,
                 temp=self.distillation_temp,
                 dynamic_scheduler=self.dynamic_scheduler,
+                rbf_sigma=self.rbf_sigma,
             )
 
 
