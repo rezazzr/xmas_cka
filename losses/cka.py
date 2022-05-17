@@ -51,7 +51,7 @@ class TorchCKA(Module):
         var2 = torch.sqrt(self.kernel_HSIC(Y, Y))
         return hsic / (var1 * var2)
 
-    def forward(self, X: Tensor, Y: Tensor, linear: bool = True):
+    def forward(self, X: Tensor, Y: Tensor, linear: bool = False):
         if linear:
             return self.linear_CKA(X=X, Y=Y)
         return self.kernel_CKA(X=X, Y=Y)
