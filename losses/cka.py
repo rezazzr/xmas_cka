@@ -2,15 +2,14 @@ import math
 from typing import Tuple, Union
 
 import torch
-from torch.nn import Module
 from torch import Tensor
-
-from utilities.utils import to_numpy
+from torch.nn import Module
 
 
 class TorchCKA(Module):
-    def __init__(self, device):
+    def __init__(self, device, sigma: float = -1):
         super().__init__()
+        self.sigma = sigma
         self.device = device
 
     def centering(self, K):
@@ -20,18 +19,19 @@ class TorchCKA(Module):
         H = identity - unit / n
         return torch.matmul(torch.matmul(H, K), H)
 
-    def rbf(self, X, sigma=None):
+    def rbf(self, X):
         GX = torch.matmul(X, X.T)
         KX = torch.diag(GX) - GX + (torch.diag(GX) - GX).T
-        if sigma is None:
-            mdist = torch.median(KX[KX != 0])
-            sigma = math.sqrt(mdist)
+        # get the median and place it to mdist, then multiply by the scaling factor sigma to get the final sigma
+        mdist = torch.median(KX[KX != 0])
+        mdist = math.sqrt(mdist)
+        sigma = mdist * self.sigma
         KX *= -0.5 / (sigma * sigma)
         KX = torch.exp(KX)
         return KX
 
-    def kernel_HSIC(self, X, Y, sigma):
-        return torch.sum(self.centering(self.rbf(X, sigma)) * self.centering(self.rbf(Y, sigma)))
+    def kernel_HSIC(self, X, Y):
+        return torch.sum(self.centering(self.rbf(X)) * self.centering(self.rbf(Y)))
 
     def linear_HSIC(self, X, Y):
         L_X = torch.matmul(X, X.T)
@@ -45,14 +45,14 @@ class TorchCKA(Module):
 
         return hsic / (var1 * var2)
 
-    def kernel_CKA(self, X, Y, sigma=None):
-        hsic = self.kernel_HSIC(X, Y, sigma)
-        var1 = torch.sqrt(self.kernel_HSIC(X, X, sigma))
-        var2 = torch.sqrt(self.kernel_HSIC(Y, Y, sigma))
+    def kernel_CKA(self, X, Y):
+        hsic = self.kernel_HSIC(X, Y)
+        var1 = torch.sqrt(self.kernel_HSIC(X, X))
+        var2 = torch.sqrt(self.kernel_HSIC(Y, Y))
         return hsic / (var1 * var2)
 
-    def forward(self, X: Tensor, Y: Tensor, linear: bool = True):
-        if linear:
+    def forward(self, X: Tensor, Y: Tensor):
+        if self.sigma == -1:
             return self.linear_CKA(X=X, Y=Y)
         return self.kernel_CKA(X=X, Y=Y)
 

@@ -2,8 +2,9 @@ from typing import List, Optional
 
 import numpy as np
 from torch import Tensor, from_numpy
-from torch.nn.modules import CrossEntropyLoss, MSELoss
 from torch.nn import Module
+from torch.nn.modules import CrossEntropyLoss, MSELoss
+
 from losses.cka_map import CKAMap
 from losses.distillation_loss import DistillationLoss
 from losses.log_cosh_loss import LogCoshLoss
@@ -16,8 +17,10 @@ class CKAMapLossCE(Module):
         alpha: float = 1.0,
         mse: bool = True,
         dynamic_scheduler: Optional[MultiplicativeScalingFactorScheduler] = None,
+        rbf_sigma: float = -1,
     ):
         super(CKAMapLossCE, self).__init__()
+        self.rbf_sigma = rbf_sigma
         self.dynamic_scheduler = dynamic_scheduler
         self.alpha = alpha
         self.mse = mse
@@ -30,7 +33,7 @@ class CKAMapLossCE(Module):
         target_map: np.ndarray,
     ):
         cross_entropy_loss = CrossEntropyLoss()(input=y_prediction, target=y_true)
-        model_cka_map = CKAMap()(activations=model_activations)
+        model_cka_map = CKAMap(rbf_sigma=self.rbf_sigma)(activations=model_activations)
         map_loss = self.map_difference(model_map=model_cka_map, target_map=target_map)
         if self.dynamic_scheduler is None:
             return cross_entropy_loss + self.alpha * map_loss, cross_entropy_loss, map_loss
@@ -54,8 +57,10 @@ class CKAMapLossDistill(Module):
         mse: bool = True,
         temp: float = 2.0,
         dynamic_scheduler: Optional[MultiplicativeScalingFactorScheduler] = None,
+        rbf_sigma: float = -1,
     ):
         super(CKAMapLossDistill, self).__init__()
+        self.rbf_sigma = rbf_sigma
         self.dynamic_scheduler = dynamic_scheduler
         self.alpha = alpha
         self.mse = mse
@@ -69,7 +74,7 @@ class CKAMapLossDistill(Module):
         target_map: np.ndarray,
     ):
         dist_loss = self.distillation_loss(features=features, current_logits=logits)
-        model_cka_map = CKAMap()(activations=model_activations)
+        model_cka_map = CKAMap(rbf_sigma=self.rbf_sigma)(activations=model_activations)
         map_loss = self.map_difference(model_map=model_cka_map, target_map=target_map)
         if self.dynamic_scheduler is None:
             return dist_loss + self.alpha * map_loss, dist_loss, map_loss

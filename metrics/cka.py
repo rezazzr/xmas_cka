@@ -9,10 +9,11 @@ from torch import Tensor
 
 
 class CKA(RepresentationBasedMetric):
-    def __init__(self, comparison_mode: bool = False):
+    def __init__(self, comparison_mode: bool = False, rbf_sigma: float = -1):
         super(CKA, self).__init__()
+        self.rbf_sigma = rbf_sigma
         self.comparison_mode = comparison_mode
-        self.cka_map = CKAMap()
+        self.cka_map = CKAMap(rbf_sigma=self.rbf_sigma)
 
     def compute_metric(self) -> np.ndarray:
         if self.comparison_mode:

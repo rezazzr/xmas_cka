@@ -4,8 +4,8 @@ import os
 import numpy as np
 from torchvision import datasets, transforms
 
-from evaluators.base import BatchRepresentationBasedEvaluator
-from metrics.cka import BatchCKA
+from evaluators.base import BatchRepresentationBasedEvaluator, RepresentationBasedEvaluator
+from metrics.cka import BatchCKA, CKA
 from models.cifar_10_models.vgg import VGG
 from utilities.utils import xavier_uniform_initialize, gpu_information_summary, set_seed, safely_load_state_dict
 
@@ -32,13 +32,24 @@ def main(args):
         second_model = VGG(width=args.second_network_width)
         second_model.load_state_dict(safely_load_state_dict(args.second_model_path))
 
-    representation_evaluator = BatchRepresentationBasedEvaluator(
-        metrics=[BatchCKA()], batch_size=args.batch_size, num_workers=args.num_workers
-    )
+    if args.rbf_sigma == -1:
+        representation_evaluator = BatchRepresentationBasedEvaluator(
+            metrics=[BatchCKA()], batch_size=args.batch_size, num_workers=args.num_workers
+        )
 
-    cka_results = representation_evaluator.evaluate(model_1=model, dataset=cifar_data_valid, model_2=second_model)[
-        "BatchCKA"
-    ]
+        cka_results = representation_evaluator.evaluate(model_1=model, dataset=cifar_data_valid, model_2=second_model)[
+            "BatchCKA"
+        ]
+    else:
+        representation_evaluator = RepresentationBasedEvaluator(
+            metrics=[CKA(rbf_sigma=args.rbf_sigma)],
+            batch_size=args.batch_size,
+            num_workers=args.num_workers,
+        )
+        representation_evaluator.record_representations_set_1(model=model, dataset=cifar_data_valid)
+        if second_model is not None:
+            representation_evaluator.record_representations_set_1(model=second_model, dataset=cifar_data_valid)
+        cka_results = representation_evaluator.compute_metrics()["CKA"]
     with np.printoptions(precision=3, suppress=True):
         print(cka_results)
 
@@ -96,6 +107,14 @@ if __name__ == "__main__":
         help="Random seed value for this experiment.",
         type=int,
         default=3407,
+    )
+
+    parser.add_argument(
+        "--rbf_sigma",
+        help="If the RBF sigma is == -1 then the linear CKA is computed, else the kernel CKA is computed and the sigma"
+        "will indicate the multiplier to the median distance.",
+        type=float,
+        default=-1,
     )
 
     args = parser.parse_args()
