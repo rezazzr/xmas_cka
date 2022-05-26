@@ -11,7 +11,7 @@ python early_layer_study.py --data_root "path_to_the_data_directory" --memorize
 And to produce the Generalized network we run:
 
 ```shell 
-python early_layer_study.py --data_root "path_to_the_data_directory" --memorize
+python early_layer_study.py --data_root "path_to_the_data_directory"
 ```
 The Random network, needs no training hence all we need to do is to create it and initialize it:
 ```python
