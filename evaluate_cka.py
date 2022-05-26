@@ -25,7 +25,9 @@ def main(args):
             root=args.data_root, train=False, transform=cifar_transform_valid, download=True
         )
     elif args.dataset.lower() == "patchcamelyon":
-        under_study_data = PCAM(root=args.data_root, split="test", transform=cifar_transform_valid, download=False)
+        under_study_data = PCAM(
+            root=args.data_root, split="test", transform=patch_camelyon_transform_valid, download=False
+        )
     else:
         error_message = f"Unsupported --dataset: {args.dataset}"
         raise ValueError(error_message)
